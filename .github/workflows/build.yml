@@ -25,6 +25,11 @@ jobs:
           fetch-depth: 0
           submodules: true
 
+      - name: Set execute permissions for required scripts
+        run: |
+          chmod +x ./build.sh
+          chmod +x bin/toml/tq-x86_64
+
       - name: Update config
         if: ${{ inputs.from_ci }}
         run: |
