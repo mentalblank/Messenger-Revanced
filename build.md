@@ -1,7 +1,7 @@
-Messenger (arm64-v8a): 521.0.0.62.108  
+Messenger (arm64-v8a): 524.0.0.44.109  
 
 Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach root the app from Play Store
   
 CLI: j-hc/revanced-cli-5.0.0-all.jar  
-Patches: ReVanced/patches-5.34.0.rvp  
-[Changelog](https://github.com/ReVanced/revanced-patches/releases/tag/v5.34.0)  
+Patches: ReVanced/patches-5.36.0.rvp  
+[Changelog](https://github.com/ReVanced/revanced-patches/releases/tag/v5.36.0)  
