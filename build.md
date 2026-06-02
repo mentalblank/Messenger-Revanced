@@ -1,7 +1,8 @@
-Messenger (arm64-v8a): 524.0.0.44.109  
+Messenger (arm64-v8a): 563.0.0.47.86  
+Messenger (arm-v7a): 563.0.0.47.86  
 
 Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach root the app from Play Store
   
-CLI: j-hc/revanced-cli-5.0.0-all.jar  
-Patches: ReVanced/patches-5.36.0.rvp  
-[Changelog](https://github.com/ReVanced/revanced-patches/releases/tag/v5.36.0)  
+CLI: MorpheApp/morphe-cli-1.9.0-all.jar  
+Patches: RookieEnough/patches-1.0.4.mpp  
+[Changelog](https://github.com/RookieEnough/De-Vanced/releases/tag/v1.0.4)  
