@@ -5,12 +5,31 @@ enable-magisk-update = false   # set this to false if you do not want to receive
 
 # you can use rvmm-config-gen to generate a config
 
-[Messenger]
+[Messenger-DeVanced]
+app-name = "Messenger"
+# De-ReVanced is this repo's old name and still redirects here
 patches-source = "RookieEnough/De-Vanced"
 cli-source = "MorpheApp/morphe-cli"
-rv-brand = "De-Vanced"
+rv-brand = "DeVanced"
 build-mode = "apk"
 arch = "both"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/facebook-2/messenger/"
 uptodown-dlurl = "https://facebook-messenger.en.uptodown.com/android"
+apkcombo-dlurl = "https://apkcombo.com/facebook-messenger/com.facebook.orca"
+gplay-dlurl = "com.facebook.orca"
+patcher-args = "--continue-on-error"
+
+[Messenger-Rushiranpise]
+app-name = "Messenger"
+patches-source = "rushiranpise/morphe-patches"
+cli-source = "MorpheApp/morphe-cli"
+rv-brand = "Rushiranpise"
+build-mode = "apk"
+arch = "both"
+# messenger has no use for microg, and utils.sh would otherwise force it on
+excluded-patches = "'GmsCore support (MicroG)'"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/facebook-2/messenger/"
+uptodown-dlurl = "https://facebook-messenger.en.uptodown.com/android"
+apkcombo-dlurl = "https://apkcombo.com/facebook-messenger/com.facebook.orca"
+gplay-dlurl = "com.facebook.orca"
 patcher-args = "--continue-on-error"
