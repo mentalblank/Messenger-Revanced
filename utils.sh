@@ -240,18 +240,41 @@ __FS_STATE__=cold __CFB_STATE__=cold
 
 # containers are started on first use, so builds served by a plain source never pay for them
 _solver_start() {
-	local name=$1 image=$2 port=$3 probe=$4 i
+	local name=$1 image=$2 port=$3 probe=$4
 	if ! command -v docker >/dev/null 2>&1; then
 		epr "docker is not available, cannot start ${name}"
 		return 1
 	fi
-	if [ "$(docker inspect -f '{{.State.Running}}' "$name" 2>/dev/null)" != true ]; then
-		docker rm -f "$name" >/dev/null 2>&1 || :
-		pr "Starting ${name}"
-		docker run -d --name "$name" -p "127.0.0.1:${port}:${port}" "$image" >/dev/null 2>&1 || return 1
+	# apps build in parallel and share one container, so only one job may start it
+	(
+		flock 9
+		_solver_start_locked "$name" "$image" "$port" "$probe"
+	) 9>"${TEMP_DIR}/${name}.lock"
+}
+
+_solver_start_locked() {
+	local name=$1 image=$2 port=$3 probe=$4 i op
+	if [ "$(docker inspect -f '{{.State.Running}}' "$name" 2>/dev/null)" = true ]; then
+		_solver_wait "$name" "$probe"
+		return
 	fi
-	for ((i = 0; i < 60; i++)); do
+	if docker inspect "$name" >/dev/null 2>&1; then docker rm -f "$name" >/dev/null 2>&1 || :; fi
+	pr "Starting ${name}"
+	if ! op=$(docker run -d --name "$name" -p "127.0.0.1:${port}:${port}" "$image" 2>&1); then
+		epr "could not start ${name}: $(tail -2 <<<"$op")"
+		return 1
+	fi
+	_solver_wait "$name" "$probe"
+}
+
+_solver_wait() {
+	local name=$1 probe=$2 i
+	for ((i = 0; i < 90; i++)); do
 		if curl -s --max-time 5 -o /dev/null "$probe"; then return 0; fi
+		if [ "$(docker inspect -f '{{.State.Running}}' "$name" 2>/dev/null)" != true ]; then
+			epr "${name} exited: $(docker logs --tail 2 "$name" 2>&1 || :)"
+			return 1
+		fi
 		sleep 2
 	done
 	epr "${name} did not come up"
@@ -673,7 +696,7 @@ get_apkcombo_resp() {
 	__APKCOMBO_URL__=$1
 	__APKCOMBO_RESP__=$(req "${1}/old-versions/" -) || return 1
 }
-get_apkcombo_pkg_name() { grep -oE '[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+){2,}' <<<"${__APKCOMBO_URL__##*/}" | head -1; }
+get_apkcombo_pkg_name() { grep -m1 -oE '[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+){2,}' <<<"${__APKCOMBO_URL__##*/}"; }
 get_apkcombo_vers() {
 	grep -oE 'download/phone-[0-9][0-9a-zA-Z.]*-apk' <<<"$__APKCOMBO_RESP__" |
 		sed 's|download/phone-||;s|-apk$||' | awk '!seen[$0]++'
@@ -682,7 +705,8 @@ dl_apkcombo() {
 	local url=$1 version=$2 output=$3 _arch=$4 _dpi=$5
 	local page r2
 	page=$(req "${url}/download/phone-${version}-apk" -) || return 1
-	r2=$($HTMLQ --attribute href 'a[href^="/r2?u="]' <<<"$page" | head -1) || r2=""
+	r2=$($HTMLQ --attribute href 'a[href^="/r2?u="]' <<<"$page") || r2=""
+	r2=${r2%%$'\n'*}
 	if [ -z "$r2" ]; then
 		epr "apkcombo has no download for version '${version}'"
 		return 1
@@ -740,7 +764,7 @@ get_apkpure_resp() {
 	_cf_get "${1}/versions" || return 1
 	__APKPURE_RESP__=$__SOLVER_HTML__
 }
-get_apkpure_pkg_name() { grep -oE '[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+){2,}' <<<"${__APKPURE_URL__##*/}" | head -1; }
+get_apkpure_pkg_name() { grep -m1 -oE '[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+){2,}' <<<"${__APKPURE_URL__##*/}"; }
 get_apkpure_vers() {
 	grep -oE 'download/[0-9][0-9a-zA-Z._-]*' <<<"$__APKPURE_RESP__" |
 		sed 's|download/||' | awk '!seen[$0]++'
@@ -750,9 +774,11 @@ dl_apkpure() {
 	local page dlurl
 	_cf_get "${url}/download/${version}" || return 1
 	page=$__SOLVER_HTML__
-	dlurl=$($HTMLQ --attribute href "a#download_link" <<<"$page" | head -1) || dlurl=""
+	dlurl=$($HTMLQ --attribute href "a#download_link" <<<"$page") || dlurl=""
+	dlurl=${dlurl%%$'\n'*}
 	if [ -z "$dlurl" ]; then
-		dlurl=$(grep -oE 'https://d\.(apkpure|cdnpure)\.[a-z]+/b/[^"]+' <<<"$page" | head -1) || dlurl=""
+		dlurl=$(grep -oE 'https://d\.(apkpure|cdnpure)\.[a-z]+/b/[^"]+' <<<"$page") || dlurl=""
+		dlurl=${dlurl%%$'\n'*}
 	fi
 	if [ -z "$dlurl" ]; then
 		epr "apkpure exposes no download link for version '${version}'"
@@ -816,7 +842,8 @@ lspatch_apk() {
 		rm -rf "$outdir"
 		return 1
 	fi
-	out=$(find "$outdir" -name '*-lspatched.apk' -type f | head -1)
+	out=$(find "$outdir" -name '*-lspatched.apk' -type f)
+	out=${out%%$'\n'*}
 	if [ -z "$out" ]; then
 		epr "lspatch produced no output"
 		rm -rf "$outdir"
