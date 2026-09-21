@@ -4,8 +4,8 @@ Failed:
 - Messenger-DeVanced (arm-v7a)  
   
 CLI: MorpheApp/morphe-desktop-1.16.0-all.jar  
-Patches: RookieEnough/patches-1.4.3.mpp  
-[Changelog](https://github.com/RookieEnough/De-Vanced/releases/tag/v1.4.3)  
+Patches: RookieEnough/patches-1.4.4.mpp  
+[Changelog](https://github.com/RookieEnough/De-Vanced/releases/tag/v1.4.4)  
 
 Skipped:  
-Patches: rushiranpise/patches-1.22.0.mpp    
+Patches: rushiranpise/patches-1.22.0.mpp      
